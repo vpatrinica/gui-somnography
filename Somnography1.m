@@ -144,15 +144,24 @@ function setGridProperties(aNrCol, aSizeCol, newData, handles)
     
     
     % set the data
-    dummy = {};
+    initTableData = {};
     for i=1:aNrCol
-        dummy = cat(1, dummy, {logical(0), ['Low Pass'], [25], [0.4], [0], [25], [0.4], [0]})
+        initTableData = cat(1, initTableData, {logical(0), ['Low Pass'], [25], [0.3], [0], [25], [0.3], [0]});
     end
-    set(handles.uitable1,'Data', cat(2, dummy, newData))
-    dummy
+    set(handles.uitable1,'Data', cat(2, initTableData, newData));
+    
+    
+    
+    
+    info.newData = newData;
+    info.lowpass = [25, 0.3, 0];
+    info.highpass = [25, 0, 0.7];
+    info.bandpass = [25, 0.3, 0.7];
+    info.bandstop = [25, 0.3, 0.7];
+    set(handles.uitable1,'UserData',info)
+    
     
     set(handles.uitable1,'Visible', 'on')
-    
     % set size of the main window and table
     %get(handles.figure1, 'Position')
     %initPositionMainW = [10, 20, 300, 20];
@@ -230,7 +239,7 @@ function uitable1_CellEditCallback(hObject, eventdata, handles)
           %   Index = eventdata.Indices(1); 
              %ColumnNames = get(src, 'ColumnName');
              %Propname = ColumnNames{Index}; 
-           %  data=get(hObject,'Data'); % get the data cell array of the table
+data = get(hObject,'Data'); % get the data cell array of the table
 %cols=get(hObject,'ColumnFormat'); % get the column formats
 %if strcmp(cols(eventdata.Indices(2)),'logical') % if the column of the edited cell is logical
 %   if eventdata.EditData % if the checkbox was set to true
@@ -241,12 +250,110 @@ function uitable1_CellEditCallback(hObject, eventdata, handles)
 %   end
 %end
  % now set the table's data to the updated data cell array
- % data{eventdata.Indices(1), 1}
+ 
+ % if the filter is low pass
+ 
+colNames = get(hObject,'ColumnName');
+
+if strcmp(colNames{eventdata.Indices(2)}, 'Order')
+    if (data{eventdata.Indices(1), eventdata.Indices(2)} < 1) || (data{eventdata.Indices(1), eventdata.Indices(2)} > 1000) || isnan(data{eventdata.Indices(1), eventdata.Indices(2)})
+        data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
+    end
+end
+
+% Stays 0 the Low Pass/bandPass 
+if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Pass')
+    %if  isnan(data{eventdata.Indices(1), eventdata.Indices(2)})
+        data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
+    %end
+end
+
+if strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') && strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Low Pass')
+    %if  isnan(data{eventdata.Indices(1), eventdata.Indices(2)})
+        data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
+    %end
+end
+
+
+
+
+%nonnegativity of the low pass/ band pass and < 1
+
+if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Low Pass')
+    if  isnan(data{eventdata.Indices(1), eventdata.Indices(2)}) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=0) || (data{eventdata.Indices(1), eventdata.Indices(2)}>=1)
+        data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
+    end
+end
+
+if strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') && strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'High Pass')
+    if   isnan(data{eventdata.Indices(1), eventdata.Indices(2)}) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=0) || (data{eventdata.Indices(1), eventdata.Indices(2)}>=1)
+        data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
+    end
+end
+
+
+% nonnegativity and order of the frequencies for the band pass/stop
+
+
+if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && (strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Pass') || strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Stop'))
+    if isnan(data{eventdata.Indices(1), eventdata.Indices(2)}) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=0) || (data{eventdata.Indices(1), eventdata.Indices(2)}>=1) || (data{eventdata.Indices(1), eventdata.Indices(2)}>=data{eventdata.Indices(1), eventdata.Indices(2)+1} )
+        data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
+    end
+end
+
+if strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') && (strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Pass') || strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Stop'))
+    if isnan(data{eventdata.Indices(1), eventdata.Indices(2)}) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=0) || (data{eventdata.Indices(1), eventdata.Indices(2)}>=1) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=data{eventdata.Indices(1), eventdata.Indices(2)-1} )
+        data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
+    end
+end
+
+
+
+
+
+ info = get(handles.uitable1, 'UserData');
+ if strcmp(data{eventdata.Indices(1), eventdata.Indices(2)}, 'Low Pass')
+
+    data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.lowpass(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+1} = info.lowpass(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.lowpass(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+2} = info.lowpass(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.lowpass(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+3} = info.lowpass(3);
+ end
+ if strcmp(data{eventdata.Indices(1), eventdata.Indices(2)}, 'High Pass')
+
+    data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.highpass(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+1} = info.highpass(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.highpass(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+2} = info.highpass(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.highpass(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+3} = info.highpass(3);
+ end
+ if strcmp(data{eventdata.Indices(1), eventdata.Indices(2)}, 'Band Pass')
+
+    data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.bandpass(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+1} = info.bandpass(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.bandpass(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+2} = info.bandpass(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.bandpass(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+3} = info.bandpass(3);
+ end
+ if strcmp(data{eventdata.Indices(1), eventdata.Indices(2)}, 'Band Stop')
+
+    data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.bandstop(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+1} = info.bandstop(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.bandstop(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+2} = info.bandstop(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.bandstop(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+3} = info.bandstop(3);
+ end
+ % data{eventdata.Indices(1), eventdata.Indices(2)}
  % data{eventdata.Indices(1), 2}
  % data{eventdata.Indices(1), eventdata.Indices(2)}
  % data{eventdata.Indices(1), 1} = false;
  % eventdata.Indices(1)
- %            set(hObject,'Data',data);
+             set(hObject,'Data',data);
 %end
        
 
@@ -298,6 +405,7 @@ function SetDefaultsMenuItem_Callback(hObject, eventdata, handles)
     end
     % Update handles structure..
     guidata(hObject, handles)
+    
 
 
 
@@ -305,13 +413,16 @@ function doSetDefaultValues
     errordlg('Setting defaults failed..', 'Not implemented')
 
 
+%function doUpdateDefaultValues
+%    errordlg('Setting defaults failed..', 'Not implemented')    
+    
 % --------------------------------------------------------------------
 function EditDefaultsMenuItem_Callback(hObject, eventdata, handles)
 % hObject    handle to EditDefaultsMenuItem (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 errordlg('Editing defaults failed..', 'Not implemented')
-
+% doUpdateDefaultValues
     
  
     
@@ -334,8 +445,10 @@ if ~isequal(file, 0)
     open(file);
 newData = importdata(file);
 [nrCol, sizeCol] = size(newData)
-   setGridProperties(nrCol, sizeCol, newData, handles)
-    
+
+setGridProperties(nrCol, sizeCol, newData, handles)
+
+
 end
 
 
