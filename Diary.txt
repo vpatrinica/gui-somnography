@@ -1,0 +1,166 @@
+
+K>> data
+
+data = 
+
+    [1]    'Low Pass'     [1]    [2]
+    [0]    'Low Pass'     [1]    [3]
+    [0]    'High Pass'    [1]    [4]
+    [0]    'Band Pass'    [1]    [5]
+
+K>> dummy = {}
+
+dummy = 
+
+     {}
+
+K>> dummy = cat(1, dummy, {[0], ['Low Pass'], [1], [1]})
+
+dummy = 
+
+    [0]    'Low Pass'    [1]    [1]
+
+K>> dummy = {}
+
+dummy = 
+
+     {}
+
+K>> for i=1:nrCol
+dummy = cat(1, dummy, {[0], ['Low Pass'], [1], [1]})
+end
+
+dummy = 
+
+    [0]    'Low Pass'    [1]    [1]
+
+
+dummy = 
+
+    [0]    'Low Pass'    [1]    [1]
+    [0]    'Low Pass'    [1]    [1]
+
+
+dummy = 
+
+    [0]    'Low Pass'    [1]    [1]
+    [0]    'Low Pass'    [1]    [1]
+    [0]    'Low Pass'    [1]    [1]
+
+K>> cat(1, dummy, newData)
+??? Error using ==> cat
+CAT arguments dimensions are not consistent.
+
+K>> newData
+
+newData = 
+
+    [ 1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [ 9]    [10]    [11]    [12]
+    [ 2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    [10]    [11]    [12]    [ 0]
+    [10]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [ 9]    [10]    [ 0]    [ 0]
+
+K>> cat(2, dummy, newData)
+
+ans = 
+
+    [0]    'Low Pass'    [1]    [1]    [ 1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [ 9]    [10]    [11]    [12]
+    [0]    'Low Pass'    [1]    [1]    [ 2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    [10]    [11]    [12]    [ 0]
+    [0]    'Low Pass'    [1]    [1]    [10]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [ 9]    [10]    [ 0]    [ 0]
+
+K>> handles.uitable1.setData(cat(2, dummy, newData))
+??? Attempt to reference field of non-structure array.
+
+K>> cat(2, dummy, newData)
+
+ans = 
+
+    [0]    'Low Pass'    [1]    [1]    [ 1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [ 9]    [10]    [11]    [12]
+    [0]    'Low Pass'    [1]    [1]    [ 2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    [10]    [11]    [12]    [ 0]
+    [0]    'Low Pass'    [1]    [1]    [10]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [ 9]    [10]    [ 0]    [ 0]
+
+K>> disp(handles)
+          figure1: 196.0028
+       popupmenu1: 8.0043
+         uitable1: 7.0056
+      pushbutton1: 205.0026
+         FileMenu: 202.0027
+            axes1: 197.0028
+    CloseMenuItem: 204.0027
+     OpenMenuItem: 203.0027
+           output: 196.0028
+
+K>> disp(handles.uitable1)
+    7.0056
+
+K>> disp(handles.uitable1.data)
+??? Attempt to reference field of non-structure array.
+
+K>> handles.uitable1.data
+??? Attempt to reference field of non-structure array.
+
+K>> handles.uitable1.getData
+??? Attempt to reference field of non-structure array.
+
+K>> get(handles.uitable1,'Data')
+
+ans = 
+
+    [1]    'Low Pass'     [1]    [2]
+    [0]    'Low Pass'     [1]    [3]
+    [0]    'High Pass'    [1]    [4]
+    [0]    'Band Pass'    [1]    [5]
+
+K>> set(handles.uitable1,'Data', cat(2, dummy, newData))
+K>> get(handles.uitable1,'Data')
+
+ans = 
+
+    [0]    'Low Pass'    [1]    [1]    [ 1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [ 9]    [10]    [11]    [12]
+    [0]    'Low Pass'    [1]    [1]    [ 2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    [10]    [11]    [12]    [ 0]
+    [0]    'Low Pass'    [1]    [1]    [10]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [ 9]    [10]    [ 0]    [ 0]
+
+K>> set(handles.uitable1,'Visible', true)
+??? Error using ==> set
+Bad value for uitable property: 'Visible'.
+
+K>> get(handles.uitable1,'Visible')
+
+ans =
+
+off
+
+K>> set(handles.uitable1,'Visible', 'on')
+K>> get(handles.uitable1,'Visible')
+
+ans =
+
+on
+
+
+newData = 
+
+    [ 1]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [ 9]    [10]    [11]    [12]
+    [ 2]    [3]    [4]    [5]    [6]    [7]    [8]    [9]    [10]    [11]    [12]    [ 0]
+    [10]    [2]    [3]    [4]    [5]    [6]    [7]    [8]    [ 9]    [10]    [ 0]    [ 0]
+
+
+ans =
+
+     0
+
+
+ans =
+
+Band Pass
+
+
+ans =
+
+Band Pass
+
+
+ans =
+
+     1
+
+>> 
