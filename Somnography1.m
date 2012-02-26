@@ -57,11 +57,13 @@ handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
-% This sets up the initial plot - only do when we are invisible
-% so window can get raised using Somnography1.
-%if strcmp(get(hObject,'Visible'),'off')
-%    plot(rand(5));
-%end
+defaultOptsFilters.lowpass = [25 0.3 0];
+defaultOptsFilters.highpass = [25 0 0.7];
+defaultOptsFilters.bandpass = [25 0.3 0.7];
+defaultOptsFilters.bandstop = [25 0.3 0.7];
+
+set(handles.SetDefaultsMenuItem,'UserData', defaultOptsFilters);
+
 
 % UIWAIT makes Somnography1 wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
@@ -76,13 +78,6 @@ function varargout = Somnography1_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
-
-% --- Executes on button press in pushbutton1.
-function pushbutton1_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
 
 
 % --------------------------------------------------------------------
@@ -104,11 +99,7 @@ if ~isequal(file, 0)
 
 %To see the actual value of the cell array 'C' type the following
     newData = importdata(file);
-    %handles.uitable1.Data
-    %data=get(handles.uitable1,'Data')
-    %data=get(handles.uitable1,'ColumnName')
-    %data=get(handles.uitable1,'ColumnEditable')
-    %data=get(handles.uitable1,'ColumnFormat')
+    
     % select only the first 10 values
     [nrCol, sizeCol] = size(newData)
     %newData
@@ -131,8 +122,6 @@ function setGridProperties(aNrCol, aSizeCol, newData, handles)
     % set the column names
     set(handles.uitable1,'ColumnName', newColumnName);
     
-    
-    
     % set the rows
     initRowName = {};
     newRowName = initRowName;
@@ -143,10 +132,15 @@ function setGridProperties(aNrCol, aSizeCol, newData, handles)
     set(handles.uitable1,'RowName', newRowName);
     
     
+    % get the lowpass defaults...
+    someOpts = get(handles.SetDefaultsMenuItem, 'UserData');
+    
+    dummy = {logical(0), ['Low Pass'], [someOpts.lowpass(1)], [someOpts.lowpass(2)], [someOpts.lowpass(3)], [someOpts.lowpass(1)], [someOpts.lowpass(2)], [someOpts.lowpass(3)]};
+
     % set the data
     initTableData = {};
     for i=1:aNrCol
-        initTableData = cat(1, initTableData, {logical(0), ['Low Pass'], [25], [0.3], [0], [25], [0.3], [0]});
+        initTableData = cat(1, initTableData, dummy);
     end
     set(handles.uitable1,'Data', cat(2, initTableData, newData));
     
@@ -154,10 +148,10 @@ function setGridProperties(aNrCol, aSizeCol, newData, handles)
     
     
     info.newData = newData;
-    info.lowpass = [25, 0.3, 0];
-    info.highpass = [25, 0, 0.7];
-    info.bandpass = [25, 0.3, 0.7];
-    info.bandstop = [25, 0.3, 0.7];
+    info.lowpass = someOpts.lowpass;
+    info.highpass = someOpts.highpass;
+    info.bandpass = someOpts.bandpass;
+    info.bandstop = someOpts.bandstop;
     set(handles.uitable1,'UserData',info)
     
     
@@ -235,21 +229,10 @@ function uitable1_CellEditCallback(hObject, eventdata, handles)
 %	NewData: EditData or its converted form set on the Data property. Empty if Data was not changed
 %	Error: error string when failed to convert EditData to appropriate value for Data
 % handles    structure with handles and user data (see GUIDATA)
-%if(isempty(event.Error))
-          %   Index = eventdata.Indices(1); 
-             %ColumnNames = get(src, 'ColumnName');
-             %Propname = ColumnNames{Index}; 
+
 data = get(hObject,'Data'); % get the data cell array of the table
-%cols=get(hObject,'ColumnFormat'); % get the column formats
-%if strcmp(cols(eventdata.Indices(2)),'logical') % if the column of the edited cell is logical
-%   if eventdata.EditData % if the checkbox was set to true
-%       data{eventdata.Indices(1),eventdata.Indices(2)}=true; % set the
-%       data value to true%
-%   else % if the checkbox was set to false
-%       data{eventdata.Indices(1),eventdata.Indices(2)}=false; % set the data value to false
-%   end
-%end
- % now set the table's data to the updated data cell array
+
+% now set the table's data to the updated data cell array
  
  % if the filter is low pass
  
@@ -308,9 +291,6 @@ if strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') && (strcmp(data{eventda
 end
 
 
-
-
-
  info = get(handles.uitable1, 'UserData');
  if strcmp(data{eventdata.Indices(1), eventdata.Indices(2)}, 'Low Pass')
 
@@ -348,13 +328,9 @@ end
     data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.bandstop(3);
     data{eventdata.Indices(1), eventdata.Indices(2)+3} = info.bandstop(3);
  end
- % data{eventdata.Indices(1), eventdata.Indices(2)}
- % data{eventdata.Indices(1), 2}
- % data{eventdata.Indices(1), eventdata.Indices(2)}
- % data{eventdata.Indices(1), 1} = false;
- % eventdata.Indices(1)
-             set(hObject,'Data',data);
-%end
+
+set(hObject,'Data',data);
+
        
 
 
@@ -365,25 +341,8 @@ function uitable1_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 
-% --- Executes on button press in processbutton.
-function processbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to processbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on button press in setdefaultsbutton.
-function setdefaultsbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to setdefaultsbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in editdefaultsbutton.
-function editdefaultsbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to editdefaultsbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
 
 % --------------------------------------------------------------------
@@ -399,18 +358,70 @@ function SetDefaultsMenuItem_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
     result = questdlg('Are you sure you want to set all the filter parameters to their default values? This will erase all the changes you have so far.',...
-    'Set default values!', 'Yes', 'No', 'Cancel');
+    'Set default values!', 'Yes', 'No', 'Yes');
     if strcmp(result, 'Yes') 
-        doSetDefaultValues;
+        doSetDefaultValues(handles);
     end
+    % get the default value for the low pas
+    
+    % GetDefaultOptsLowPas(handles)
     % Update handles structure..
     guidata(hObject, handles)
     
 
 
 
-function doSetDefaultValues
-    errordlg('Setting defaults failed..', 'Not implemented')
+function doSetDefaultValues(handles)
+    % errordlg('Setting defaults failed..', 'Not implemented')
+    someOpts = get(handles.SetDefaultsMenuItem, 'UserData');
+    % loop over the data in the table
+    tableData = get(handles.uitable1, 'Data');
+    [nrRows, nrCols] = size(tableData);
+    for i = 1:nrRows
+        if strcmp(tableData{i, 2}, 'Low Pass')
+            tableData{i, 3} = someOpts.lowpass(1);
+            tableData{i, 4} = someOpts.lowpass(2);
+            tableData{i, 5} = someOpts.lowpass(3);
+        end
+        if strcmp(tableData{i, 2}, 'High Pass')
+            tableData{i, 3} = someOpts.highpass(1);
+            tableData{i, 4} = someOpts.highpass(2);
+            tableData{i, 5} = someOpts.highpass(3);
+        end
+        if strcmp(tableData{i, 2}, 'Band Pass')
+            tableData{i, 3} = someOpts.bandpass(1);
+            tableData{i, 4} = someOpts.bandpass(2);
+            tableData{i, 5} = someOpts.bandpass(3);
+        end
+        if strcmp(tableData{i, 2}, 'Band Stop')
+            tableData{i, 3} = someOpts.bandstop(1);
+            tableData{i, 4} = someOpts.bandstop(2);
+            tableData{i, 5} = someOpts.bandstop(3);
+        end
+    end
+    set(handles.uitable1, 'Data', tableData);
+
+
+    
+    
+    
+    
+function [answer] = showPromptDefaults;
+%
+prompt={'Enter the default order for the Low Pass:',...
+        'Enter the default low CutOff Frequency:',...
+        'Enter the default order for the High Pass:',...
+        'Enter the default high CutOff Frequency:',...
+        'Enter the default order for the Band Pass:',...
+        'Enter the default low CutOff Frequency:',...
+        'Enter the default high CutOff Frequency:',...
+        'Enter the default order for the Low Pass:',...
+        'Enter the default low CutOff Frequency:',...
+        'Enter the default high CutOff Frequency:'};
+name='Input the default filter parameters';
+numlines=1;
+defaultanswer={'25','0.3', '25', '0.7', '25', '0.3', '0.7', '25', '0.3', '0.7'};
+answer = inputdlg(prompt,name,numlines,defaultanswer)
 
 
 %function doUpdateDefaultValues
@@ -421,10 +432,53 @@ function EditDefaultsMenuItem_Callback(hObject, eventdata, handles)
 % hObject    handle to EditDefaultsMenuItem (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-errordlg('Editing defaults failed..', 'Not implemented')
+% errordlg('Editing defaults failed..', 'Not implemented')
 % doUpdateDefaultValues
-    
- 
+
+boolContinue = 1
+
+while boolContinue
+    newVals = showPromptDefaults;
+    boolContinue = checkDefaults(newVals);
+end
+
+[newVals_x, newVals_y] = size(newVals)
+
+if newVals_y>0
+    % set the defaults
+    oldDefaultsTable = get(handles.uitable1, 'UserData');
+    oldDefaultsMenu = get(handles.SetDefaultsMenuItem, 'UserData');
+    oldDefaultsMenu.lowpass(1) = str2num(char(newVals(1)));
+    oldDefaultsTable.lowpass(1) = str2num(char(newVals(1)));
+    oldDefaultsMenu.lowpass(2) = str2num(char(newVals(2)));
+    oldDefaultsTable.lowpass(2) = str2num(char(newVals(2)));
+    oldDefaultsMenu.highpass(1) = str2num(char(newVals(3)));
+    oldDefaultsTable.highpass(1) = str2num(char(newVals(3)));
+    oldDefaultsMenu.highpass(3) = str2num(char(newVals(4)));
+    oldDefaultsTable.highpass(3) = str2num(char(newVals(4)));
+    oldDefaultsMenu.bandpass(1) = str2num(char(newVals(5)));
+    oldDefaultsTable.bandpass(1) = str2num(char(newVals(5)));
+    oldDefaultsMenu.bandpass(2) = str2num(char(newVals(6)));
+    oldDefaultsTable.bandpass(2) = str2num(char(newVals(6)));
+    oldDefaultsMenu.bandpass(3) = str2num(char(newVals(7)));
+    oldDefaultsTable.bandpass(3) = str2num(char(newVals(7)));
+    oldDefaultsMenu.bandstop(1) = str2num(char(newVals(8)));
+    oldDefaultsTable.bandstop(1) = str2num(char(newVals(8)));
+    oldDefaultsMenu.bandstop(2) = str2num(char(newVals(9)));
+    oldDefaultsTable.bandstop(2) = str2num(char(newVals(9)));
+    oldDefaultsMenu.bandstop(3) = str2num(char(newVals(10)));
+    oldDefaultsTable.bandstop(3) = str2num(char(newVals(10)));
+    set(handles.uitable1, 'UserData', oldDefaultsTable);
+    set(handles.SetDefaultsMenuItem, 'UserData', oldDefaultsMenu);
+end
+
+
+
+function result = checkDefaults(someAnswer)
+% check the validity of the fields
+
+result = 0;
+% if the cancel button is given = > {}
     
     
 
@@ -459,16 +513,18 @@ function figure1_ResizeFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get the figure size and position
-Figure_Size = get(hObject, 'Position');
+% Figure_Size = get(hObject, 'Position');
+ %set(handles.Contact_Name,'units','characters');
 
 % Set the units of the Uitable to 'Normalized'
-set(handles.uitable1,'units','normalized')
+ 
 % Get its Position
-Table_pos = get(handles.uitable1,'Position');
+%Table_pos = get(handles.uitable1,'Position');
 % Reset it so that it's width remains normalized relative to figure
-set(handles.uitable1,'Position',...
-    [Table_pos(1)-5 Table_pos(2)-5  Table_pos(3)-5 Table_pos(4)-5])
-
-
+%set(handles.uitable1,'Position',...
+%    [Figure_Size(1) Figure_Size(2)  Figure_Size(3) Figure_Size(4)])
+%set(handles.Contact_Name,'units','characters')
+%set(handles.uitable1,'units','normalized');
 % Reposition GUI on screen
-movegui(hObject, 'onscreen')
+ %movegui(hObject, 'onscreen')
+ %movegui(hObject, 'onscreen')
