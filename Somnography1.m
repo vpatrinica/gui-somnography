@@ -22,7 +22,7 @@ function varargout = Somnography1(varargin)
 
 % Edit the above text to modify the response to help Somnography1
 
-% Last Modified by GUIDE v2.5 24-Feb-2012 21:13:19
+% Last Modified by GUIDE v2.5 26-Feb-2012 16:42:30
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -110,7 +110,7 @@ end
 
 function setGridProperties(aNrCol, aSizeCol, newData, handles)
 % SETTING THE UITABLE PROPERTIES
-    
+    % TO DO the validity checking... 
     % init data for the ColumnName
     initColumnName = {'Selected', 'Type', 'Order', 'Low CutOff', 'High CutOff', 'Order(default)', 'Low CutOff(default)', 'High CutOff(default)'};
     
@@ -156,6 +156,9 @@ function setGridProperties(aNrCol, aSizeCol, newData, handles)
     
     
     set(handles.uitable1,'Visible', 'on')
+    set(handles.uiprocesstool,'Enable', 'on')
+    
+    
     % set size of the main window and table
     %get(handles.figure1, 'Position')
     %initPositionMainW = [10, 20, 300, 20];
@@ -476,18 +479,11 @@ end
 
 function result = checkDefaults(someAnswer)
 % check the validity of the fields
-
+% TO DO
 result = 0;
 % if the cancel button is given = > {}
     
     
-
-% --------------------------------------------------------------------
-function Process_Callback(hObject, eventdata, handles)
-% hObject    handle to Process (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
 
 % --------------------------------------------------------------------
 function uiopentool_ClickedCallback(hObject, eventdata, handles)
@@ -512,6 +508,8 @@ function figure1_ResizeFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+
+%TO DO
 % Get the figure size and position
 % Figure_Size = get(hObject, 'Position');
  %set(handles.Contact_Name,'units','characters');
@@ -528,3 +526,77 @@ function figure1_ResizeFcn(hObject, eventdata, handles)
 % Reposition GUI on screen
  %movegui(hObject, 'onscreen')
  %movegui(hObject, 'onscreen')
+
+
+% --------------------------------------------------------------------
+function uiprocesstool_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to uiprocesstool (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% errordlg('Editing defaults failed..', 'Not implemented')
+
+infoData  = get(handles.uitable1, 'UserData');
+processData = get(handles.uitable1, 'Data');
+outputData = infoData.newData;
+[nrSeries, nrCols] = size(processData);
+[nrRows, nrColumns] = size(outputData);
+
+for i=1:nrSeries
+    if processData{i, 1}
+        if strcmp(processData{i, 2}, 'Low Pass')
+            
+
+            h = fdesign.lowpass('n,fp,fst', processData{i, 3}, processData{i, 4}, 1);
+
+            Hd = design(h, 'equiripple');
+            outputData{i, :} = filter(Hd, [outputData{i, :}]);
+            
+        end
+        
+        if strcmp(processData{i, 2}, 'High Pass')
+            
+
+            h = fdesign.highpass('n,fst,fp', processData{i, 3}, 0.01, processData{i, 5});
+
+            Hd = design(h, 'equiripple');
+            out = filter(Hd, [outputData{i, :}]);
+            for j=1:nrColumns
+                outputData{i, j} = out(i,j);
+            end
+            
+        end
+        if strcmp(processData{i, 2}, 'Band Pass')
+            
+
+            h = fdesign.bandpass('n,fp,fst', processData{i, 3}, processData{i, 4},  processData{i, 5});
+
+            Hd = design(h, 'equiripple');
+            out = filter(Hd, [outputData{i, :}]);
+            for j=1:nrColumns
+                outputData{i, j} = out(i,j);
+            end
+            
+        end
+        if strcmp(processData{i, 2}, 'Band Stop')
+            
+
+            h = fdesign.bandstop('n,fst,fp', processData{i, 3}, processData{i, 4},  processData{i, 5});
+
+            Hd = design(h, 'equiripple');
+            out = filter(Hd, [outputData{i, :}]);
+            for j=1:nrColumns
+                outputData{i, j} = out(i,j);
+            end
+            
+        end
+    end
+end
+
+% save the processed info into a file...
+
+% outFileName = strcat('out_', inputFileName);
+% save(outFileName, outputData);
+
+
+
