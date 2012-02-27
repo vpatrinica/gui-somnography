@@ -406,7 +406,7 @@ function doSetDefaultValues(handles)
     
     
     
-function [answer] = showPromptDefaults;
+function [answer] = showPromptDefaults(handles);
 %
 prompt={'Enter the default order for the Low Pass:',...
         'Enter the default low CutOff Frequency:',...
@@ -420,7 +420,11 @@ prompt={'Enter the default order for the Low Pass:',...
         'Enter the default high CutOff Frequency:'};
 name='Input the default filter parameters';
 numlines=1;
-defaultanswer={'25','0.3', '25', '0.7', '25', '0.3', '0.7', '25', '0.3', '0.7'};
+oldDefaultsMenu = get(handles.SetDefaultsMenuItem, 'UserData');
+defaultanswer={num2str(oldDefaultsMenu.lowpass(1)), num2str(oldDefaultsMenu.lowpass(2)), ...
+    num2str(oldDefaultsMenu.highpass(1)), num2str(oldDefaultsMenu.highpass(3)), ...
+    num2str(oldDefaultsMenu.bandpass(1)), num2str(oldDefaultsMenu.bandpass(2)), num2str(oldDefaultsMenu.bandpass(3)), ...
+    num2str(oldDefaultsMenu.bandstop(1)), num2str(oldDefaultsMenu.bandstop(2)), num2str(oldDefaultsMenu.bandstop(3))};
 answer = inputdlg(prompt,name,numlines,defaultanswer);
 
 
@@ -438,7 +442,7 @@ function EditDefaultsMenuItem_Callback(hObject, eventdata, handles)
 boolContinue = 1;
 
 while boolContinue
-    newVals = showPromptDefaults;
+    newVals = showPromptDefaults(handles);
     boolContinue = checkDefaults(newVals);
 end
 
@@ -504,6 +508,96 @@ function result = checkDefaults(someAnswer)
 % check the validity of the fields
 % TO DO
 result = 0;
+[x, y]= size(someAnswer);
+if (x == 0)
+    result = 0;
+end 
+
+if (x > 0)
+
+% hard check on all the params... 
+% order numeric and >0
+if length(str2num(char(someAnswer(1))))== 0 
+    result = 1;return
+end
+if str2num(char(someAnswer(1)))<= 0 
+    result = 1;return
+end
+
+if length(str2num(char(someAnswer(3))))== 0 
+    result = 1;return
+end
+if str2num(char(someAnswer(3)))<= 0 
+    result = 1;return
+end
+
+if length(str2num(char(someAnswer(5))))== 0 
+    result = 1;return
+end
+if str2num(char(someAnswer(5)))<= 0 
+    result = 1;return
+end
+
+if length(str2num(char(someAnswer(8))))== 0 
+    result = 1;return
+end
+if str2num(char(someAnswer(8)))<= 0 
+    result = 1;return
+end
+
+
+% lowpass/highpass lo/hi freq
+if length(str2num(char(someAnswer(2))))== 0 
+    result = 1;
+    return
+end
+if ((str2num(char(someAnswer(2)))<= 0) || (str2num(char(someAnswer(2)))>=1))
+    result = 1;return
+end
+if length(str2num(char(someAnswer(4))))== 0 
+    result = 1;return
+end
+if (str2num(char(someAnswer(4)))<= 0) || (str2num(char(someAnswer(4)))>=1) 
+    result = 1;return
+end
+
+% bandstop lo/hi freq
+if length(str2num(char(someAnswer(9))))== 0 
+    result = 1;return
+end
+if (str2num(char(someAnswer(9)))<= 0) || (str2num(char(someAnswer(9)))>=1)
+    result = 1;return
+end
+if length(str2num(char(someAnswer(10))))== 0 
+    result = 1;return
+end
+if (str2num(char(someAnswer(10)))<= 0) || (str2num(char(someAnswer(10)))>=1) || (str2num(char(someAnswer(10)))<= str2num(char(someAnswer(9))))
+    result = 1;return
+end
+
+
+
+% bandpass lo/hi freq
+if length(str2num(char(someAnswer(6))))== 0 
+    result = 1;return
+end
+if (str2num(char(someAnswer(6)))<= 0) || (str2num(char(someAnswer(6)))>=1)
+    result = 1;return
+end
+if length(str2num(char(someAnswer(7))))== 0 
+    result = 1;return
+end
+if (str2num(char(someAnswer(7)))<= 0) || (str2num(char(someAnswer(7)))>=1) || (str2num(char(someAnswer(7)))<= str2num(char(someAnswer(6))))
+    result = 1;return
+end
+
+
+
+
+
+end
+
+
 % if the cancel button is given = > {}
     
     
