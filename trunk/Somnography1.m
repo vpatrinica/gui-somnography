@@ -251,7 +251,7 @@ if strcmp(colNames{eventdata.Indices(2)}, 'Order')
 end
 
 % Stays 0 the Low Pass/bandPass 
-if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Pass')
+if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'High Pass')
     %if  isnan(data{eventdata.Indices(1), eventdata.Indices(2)})
         data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
     %end
@@ -266,32 +266,26 @@ end
 
 
 
-%nonnegativity of the low pass/ band pass and < 1
+%nonnegativity of the low pass/ band pass and < 1 and NaN
 
-if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Low Pass')
+if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') || strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') 
     if  isnan(data{eventdata.Indices(1), eventdata.Indices(2)}) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=0) || (data{eventdata.Indices(1), eventdata.Indices(2)}>=1)
         data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
     end
 end
 
-if strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') && strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'High Pass')
-    if   isnan(data{eventdata.Indices(1), eventdata.Indices(2)}) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=0) || (data{eventdata.Indices(1), eventdata.Indices(2)}>=1)
-        data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
-    end
-end
+
+%  order of the frequencies for the band pass/stop
 
 
-% nonnegativity and order of the frequencies for the band pass/stop
-
-
-if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && (strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Pass') || strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Stop'))
-    if isnan(data{eventdata.Indices(1), eventdata.Indices(2)}) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=0) || (data{eventdata.Indices(1), eventdata.Indices(2)}>=1) || (data{eventdata.Indices(1), eventdata.Indices(2)}>=data{eventdata.Indices(1), eventdata.Indices(2)+1} )
+if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && (strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-2}, 'Band Pass') || strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-2}, 'Band Stop'))
+    if  (data{eventdata.Indices(1), eventdata.Indices(2)}>=data{eventdata.Indices(1), eventdata.Indices(2)+1} )
         data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
     end
 end
 
 if strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') && (strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Pass') || strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Stop'))
-    if isnan(data{eventdata.Indices(1), eventdata.Indices(2)}) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=0) || (data{eventdata.Indices(1), eventdata.Indices(2)}>=1) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=data{eventdata.Indices(1), eventdata.Indices(2)-1} )
+    if   (data{eventdata.Indices(1), eventdata.Indices(2)}<=data{eventdata.Indices(1), eventdata.Indices(2)-1} )
         data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
     end
 end
@@ -454,8 +448,12 @@ if newVals_y>0
     % set the defaults
     oldDefaultsTable = get(handles.uitable1, 'UserData');
     oldDefaultsMenu = get(handles.SetDefaultsMenuItem, 'UserData');
+    
+    optsTableData = get(handles.uitable1, 'Data');
+    [numRow, numCol] = size(optsTableData);
     oldDefaultsMenu.lowpass(1) = str2num(char(newVals(1)));
     oldDefaultsTable.lowpass(1) = str2num(char(newVals(1)));
+  
     oldDefaultsMenu.lowpass(2) = str2num(char(newVals(2)));
     oldDefaultsTable.lowpass(2) = str2num(char(newVals(2)));
     oldDefaultsMenu.highpass(1) = str2num(char(newVals(3)));
@@ -474,6 +472,28 @@ if newVals_y>0
     oldDefaultsTable.bandstop(2) = str2num(char(newVals(9)));
     oldDefaultsMenu.bandstop(3) = str2num(char(newVals(10)));
     oldDefaultsTable.bandstop(3) = str2num(char(newVals(10)));
+    for i = 1:numRow
+        if strcmp(optsTableData{i, 2}, 'Low Pass')
+            optsTableData{i, 6} = oldDefaultsMenu.lowpass(1);
+            optsTableData{i, 7} = oldDefaultsMenu.lowpass(2);
+        end
+         if strcmp(optsTableData{i, 2}, 'High Pass')
+            optsTableData{i, 6} = oldDefaultsMenu.highpass(1);
+            optsTableData{i, 8} = oldDefaultsMenu.highpass(2);
+         end
+         if strcmp(optsTableData{i, 2}, 'Band Pass')
+            optsTableData{i, 6} = oldDefaultsMenu.bandpass(1);
+            optsTableData{i, 7} = oldDefaultsMenu.bandpass(2);
+            optsTableData{i, 8} = oldDefaultsMenu.bandpass(3);
+         end
+        if strcmp(optsTableData{i, 2}, 'Band Stop')
+            optsTableData{i, 6} = oldDefaultsMenu.bandstop(1);
+            optsTableData{i, 7} = oldDefaultsMenu.bandstop(2);
+            optsTableData{i, 8} = oldDefaultsMenu.bandstop(3);
+        end
+        
+    end
+    set(handles.uitable1, 'Data', optsTableData);
     set(handles.uitable1, 'UserData', oldDefaultsTable);
     set(handles.SetDefaultsMenuItem, 'UserData', oldDefaultsMenu);
 end
