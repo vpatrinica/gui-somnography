@@ -101,9 +101,10 @@ if ~isequal(file, 0)
     newData = importdata(file);
     
     % select only the first 10 values
-    [nrCol, sizeCol] = size(newData)
+    [nrCol, sizeCol] = size(newData);
     %newData
-    
+    set(handles.FileMenu, 'Userdata', strrep(file, '.mat', '_out.mat'))
+
     setGridProperties(nrCol, sizeCol, newData, handles)
     
 end
@@ -424,7 +425,7 @@ prompt={'Enter the default order for the Low Pass:',...
 name='Input the default filter parameters';
 numlines=1;
 defaultanswer={'25','0.3', '25', '0.7', '25', '0.3', '0.7', '25', '0.3', '0.7'};
-answer = inputdlg(prompt,name,numlines,defaultanswer)
+answer = inputdlg(prompt,name,numlines,defaultanswer);
 
 
 %function doUpdateDefaultValues
@@ -438,14 +439,14 @@ function EditDefaultsMenuItem_Callback(hObject, eventdata, handles)
 % errordlg('Editing defaults failed..', 'Not implemented')
 % doUpdateDefaultValues
 
-boolContinue = 1
+boolContinue = 1;
 
 while boolContinue
     newVals = showPromptDefaults;
     boolContinue = checkDefaults(newVals);
 end
 
-[newVals_x, newVals_y] = size(newVals)
+[newVals_x, newVals_y] = size(newVals);
 
 if newVals_y>0
     % set the defaults
@@ -494,8 +495,9 @@ file = uigetfile('*.mat');
 if ~isequal(file, 0)
     open(file);
 newData = importdata(file);
-[nrCol, sizeCol] = size(newData)
-
+[nrCol, sizeCol] = size(newData);
+set(handles.FileMenu, 'Userdata', strrep(file, '.mat', '_out.mat'))
+%strrep(file, '.mat', '_out.mat');
 setGridProperties(nrCol, sizeCol, newData, handles)
 
 
@@ -547,46 +549,50 @@ for i=1:nrSeries
         if strcmp(processData{i, 2}, 'Low Pass')
             
 
-            h = fdesign.lowpass('n,fp,fst', processData{i, 3}, processData{i, 4}, 1);
+            h = fdesign.lowpass('N,Fc', processData{i, 3}, processData{i, 4});
 
-            Hd = design(h, 'equiripple');
-            outputData{i, :} = filter(Hd, [outputData{i, :}]);
+            Hd = design(h, 'window');
+            out = filter(Hd, [outputData{i, :}]);
+            %outputData{i, :} = filter(Hd, [outputData{i, :}]);
+            for j=1:nrColumns
+                outputData{i, j} = out(1,j);
+            end
             
         end
         
         if strcmp(processData{i, 2}, 'High Pass')
             
 
-            h = fdesign.highpass('n,fst,fp', processData{i, 3}, 0.01, processData{i, 5});
+            h = fdesign.highpass('N,Fc', processData{i, 3}, processData{i, 5});
 
-            Hd = design(h, 'equiripple');
+            Hd = design(h, 'window');
             out = filter(Hd, [outputData{i, :}]);
             for j=1:nrColumns
-                outputData{i, j} = out(i,j);
+                outputData{i, j} = out(1,j);
             end
             
         end
         if strcmp(processData{i, 2}, 'Band Pass')
             
 
-            h = fdesign.bandpass('n,fp,fst', processData{i, 3}, processData{i, 4},  processData{i, 5});
+            h = fdesign.bandpass('N,Fc1,Fc2', processData{i, 3}, processData{i, 4},  processData{i, 5});
 
-            Hd = design(h, 'equiripple');
+            Hd = design(h, 'window');
             out = filter(Hd, [outputData{i, :}]);
             for j=1:nrColumns
-                outputData{i, j} = out(i,j);
+                outputData{i, j} = out(1,j);
             end
             
         end
         if strcmp(processData{i, 2}, 'Band Stop')
             
 
-            h = fdesign.bandstop('n,fst,fp', processData{i, 3}, processData{i, 4},  processData{i, 5});
+            h = fdesign.bandstop('N,Fc1,Fc2', processData{i, 3}, processData{i, 4},  processData{i, 5});
 
-            Hd = design(h, 'equiripple');
+            Hd = design(h, 'window');
             out = filter(Hd, [outputData{i, :}]);
             for j=1:nrColumns
-                outputData{i, j} = out(i,j);
+                outputData{i, j} = out(1,j);
             end
             
         end
@@ -595,8 +601,8 @@ end
 
 % save the processed info into a file...
 
-% outFileName = strcat('out_', inputFileName);
-% save(outFileName, outputData);
+ outFileName = get(handles.FileMenu, 'UserData');
+ save(char(outFileName), 'outputData');
 
 
 
