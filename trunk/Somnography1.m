@@ -99,7 +99,7 @@ if ~isequal(file, 0)
 
 %To see the actual value of the cell array 'C' type the following
     newData = importdata(file);
-    
+    newData = newData';
     % select only the first 10 values
     [nrCol, sizeCol] = size(newData);
     %newData
@@ -113,6 +113,8 @@ function setGridProperties(aNrCol, aSizeCol, newData, handles)
 % SETTING THE UITABLE PROPERTIES
     % TO DO the validity checking... 
     % init data for the ColumnName
+    %newData = newData;
+    
     initColumnName = {'Selected', 'Type', 'Order', 'Low CutOff', 'High CutOff', 'Order(default)', 'Low CutOff(default)', 'High CutOff(default)'};
     
     % dynamically create the other column names
@@ -495,8 +497,11 @@ file = uigetfile('*.mat');
 if ~isequal(file, 0)
     open(file);
 newData = importdata(file);
-[nrCol, sizeCol] = size(newData);
-set(handles.FileMenu, 'Userdata', strrep(file, '.mat', '_out.mat'))
+newData = newData';
+    % select only the first 10 values
+    [nrCol, sizeCol] = size(newData);
+    %newData
+    set(handles.FileMenu, 'Userdata', strrep(file, '.mat', '_out.mat'))
 %strrep(file, '.mat', '_out.mat');
 setGridProperties(nrCol, sizeCol, newData, handles)
 
@@ -600,7 +605,7 @@ for i=1:nrSeries
 end
 
 % save the processed info into a file...
-
+ outputData = outputData';
  outFileName = get(handles.FileMenu, 'UserData');
  save(char(outFileName), 'outputData');
 
