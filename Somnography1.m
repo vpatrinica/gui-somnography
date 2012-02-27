@@ -506,7 +506,7 @@ end
 
 function result = checkDefaults(someAnswer)
 % check the validity of the fields
-% TO DO
+
 result = 0;
 [x, y]= size(someAnswer);
 if (x == 0)
