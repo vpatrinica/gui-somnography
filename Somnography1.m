@@ -119,7 +119,8 @@ function setGridProperties(aNrCol, aSizeCol, newData, handles)
     
     % dynamically create the other column names
     newColumnName = initColumnName;
-    for i = 1:aSizeCol
+    %for i = 1:aSizeCol
+    for i = 1:3
         newColumnName = cat(2, newColumnName, {strcat('Data row_', int2str(i))});
     end
     % set the column names
@@ -145,8 +146,8 @@ function setGridProperties(aNrCol, aSizeCol, newData, handles)
     for i=1:aNrCol
         initTableData = cat(1, initTableData, dummy);
     end
-    set(handles.uitable1,'Data', cat(2, initTableData, newData));
-    
+    set(handles.uitable1,'Data', cat(2, initTableData, newData(:, 1:3)));
+    % Display first 3 Values...
     
     
     
