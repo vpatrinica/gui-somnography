@@ -86,13 +86,13 @@ function OpenMenuItem_Callback(hObject, eventdata, handles)
 % hObject    handle to OpenMenuItem (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-file = uigetfile('*.mat');
+[file, path] = uigetfile('*.mat');
 if ~isequal(file, 0)
-    open(file);
+    open(fullfile(path, file));
     % C = textscan(file,'%s','delimiter','\n','whitespace','');
 
 %To see the actual value of the cell array 'C' type the following
-    newData = importdata(file);
+    newData = importdata(fullfile(path, file));
     
     % select only the first 10 values
     [sizeCol, nrCol] = size(newData);
@@ -207,13 +207,13 @@ function uiopentool_ClickedCallback(hObject, eventdata, handles)
 % hObject    handle to uiopentool (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-file = uigetfile('*.mat');
+[file, path] = uigetfile('*.mat');
 if ~isequal(file, 0)
-    open(file);
+    open(fullfile(path, file));
     % C = textscan(file,'%s','delimiter','\n','whitespace','');
 
 %To see the actual value of the cell array 'C' type the following
-    newData = importdata(file);
+    newData = importdata(fullfile(path, file));
     
     % select only the first 10 values
     [sizeCol, nrCol] = size(newData);
