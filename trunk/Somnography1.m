@@ -57,10 +57,12 @@ handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
-defaultOptsFilters.lowpass = [25 0.3 0];
-defaultOptsFilters.highpass = [25 0 0.7];
-defaultOptsFilters.bandpass = [25 0.3 0.7];
-defaultOptsFilters.bandstop = [25 0.3 0.7];
+% defaults management, stored in the UserData parameter
+
+defaultOptsFilters.lowpass = [25 16 0 80];
+defaultOptsFilters.highpass = [25 0 28 80];
+defaultOptsFilters.bandpass = [25 16 28 80];
+defaultOptsFilters.bandstop = [25 16 28 80];
 
 set(handles.SetDefaultsMenuItem,'UserData', defaultOptsFilters);
 
@@ -95,30 +97,30 @@ function OpenMenuItem_Callback(hObject, eventdata, handles)
 [file, path] = uigetfile('*.mat');
 if ~isequal(file, 0)
     open(fullfile(path, file));
-    % C = textscan(file,'%s','delimiter','\n','whitespace','');
-
-%To see the actual value of the cell array 'C' type the following
+    
+    %store the output file name
+    set(handles.FileMenu, 'Userdata', strrep(fullfile(path, file), '.mat', '_out.mat'))
+    
     newData = importdata(fullfile(path, file));
     newData = newData';
-    % select only the first 10 values
     [nrCol, sizeCol] = size(newData);
-    %newData
-    set(handles.FileMenu, 'Userdata', strrep(fullfile(path, file), '.mat', '_out.mat'))
 
+    %construct dynamically the grid widget
     setGridProperties(nrCol, sizeCol, newData, handles)
     
 end
 
 function setGridProperties(aNrCol, aSizeCol, newData, handles)
 % SETTING THE UITABLE PROPERTIES
-    % TO DO the validity checking... 
-    % init data for the ColumnName
-    %newData = newData;
+% TODO the validity checking... 
+% init data for the ColumnName
     
-    initColumnName = {'Selected', 'Type', 'Order', 'Low CutOff', 'High CutOff', 'Order(default)', 'Low CutOff(default)', 'High CutOff(default)'};
+    initColumnName = {'Selected', 'Type', 'Order', 'Low CutOff', 'High CutOff', 'Sampling', 'Order(default)', 'Low CutOff(default)', 'High CutOff(default)', 'Sampling(default)'};
     
     % dynamically create the other column names
     newColumnName = initColumnName;
+    
+    %First 3 Values
     %for i = 1:aSizeCol
     for i = 1:3
         newColumnName = cat(2, newColumnName, {strcat('Data row_', int2str(i))});
@@ -139,7 +141,7 @@ function setGridProperties(aNrCol, aSizeCol, newData, handles)
     % get the lowpass defaults...
     someOpts = get(handles.SetDefaultsMenuItem, 'UserData');
     
-    dummy = {logical(0), ['Low Pass'], [someOpts.lowpass(1)], [someOpts.lowpass(2)], [someOpts.lowpass(3)], [someOpts.lowpass(1)], [someOpts.lowpass(2)], [someOpts.lowpass(3)]};
+    dummy = {logical(0), ['Low Pass'], [someOpts.lowpass(1)], [someOpts.lowpass(2)], [someOpts.lowpass(3)], [someOpts.lowpass(4)], [someOpts.lowpass(1)], [someOpts.lowpass(2)], [someOpts.lowpass(3)], [someOpts.lowpass(4)    ]};
 
     % set the data
     initTableData = {};
@@ -163,30 +165,7 @@ function setGridProperties(aNrCol, aSizeCol, newData, handles)
     set(handles.uiprocesstool,'Enable', 'on')
     
     
-    % set size of the main window and table
-    %get(handles.figure1, 'Position')
-    %initPositionMainW = [10, 20, 300, 20];
-    %initPositionTable = [10, 20, 300, 10];
     
-    %newPositionMainW = initPositionMainW;
-    %newPositionTable = initPositionTable;
-    
-    %newPositionMainW(4) = 20 + sizeCol * 2.5; 
-    %newPositionTable(4) = 10 + sizeCol * 2.5;
-    %newPositionMainW
-    %set(handles.figure1, 'Position', newPositionMainW)
-    %set(handles.uitable1, 'Position', newPositionTable)
-    %handles.table1.setData(new_data);
-    %handles.table1.setColumnNames(new_colnames);
-    %handles.table1.setVisible('on');
-    % who('newData')
-    %newData.data
-    % newData{1, :}
-    % newData{:, 1}
-    %D.data
-    %data
-    %newData
-    % set(hObject, 'Data',newData)
 
 % --------------------------------------------------------------------
 function CloseMenuItem_Callback(hObject, eventdata, handles)
@@ -251,14 +230,21 @@ if strcmp(colNames{eventdata.Indices(2)}, 'Order')
     end
 end
 
+
+if strcmp(colNames{eventdata.Indices(2)}, 'Sampling')
+    if (data{eventdata.Indices(1), eventdata.Indices(2)} <= 0) || isnan(data{eventdata.Indices(1), eventdata.Indices(2)})
+        data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
+    end
+end
+
 % Stays 0 the Low Pass/bandPass 
-if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'High Pass')
+if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && strcmp(data{eventdata.Indices(1), 2}, 'High Pass')
     %if  isnan(data{eventdata.Indices(1), eventdata.Indices(2)})
         data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
     %end
 end
 
-if strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') && strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Low Pass')
+if strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') && strcmp(data{eventdata.Indices(1), 2}, 'Low Pass')
     %if  isnan(data{eventdata.Indices(1), eventdata.Indices(2)})
         data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
     %end
@@ -270,7 +256,7 @@ end
 %nonnegativity of the low pass/ band pass and < 1 and NaN
 
 if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') || strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') 
-    if  isnan(data{eventdata.Indices(1), eventdata.Indices(2)}) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=0) || (data{eventdata.Indices(1), eventdata.Indices(2)}>=1)
+    if  isnan(data{eventdata.Indices(1), eventdata.Indices(2)}) || (data{eventdata.Indices(1), eventdata.Indices(2)}<=0) || (2.0*data{eventdata.Indices(1), eventdata.Indices(2)}/data{eventdata.Indices(1), 6}>=1)
         data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
     end
 end
@@ -279,14 +265,14 @@ end
 %  order of the frequencies for the band pass/stop
 
 
-if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && (strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-2}, 'Band Pass') || strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-2}, 'Band Stop'))
-    if  (data{eventdata.Indices(1), eventdata.Indices(2)}>=data{eventdata.Indices(1), eventdata.Indices(2)+1} )
+if strcmp(colNames{eventdata.Indices(2)}, 'Low CutOff') && (strcmp(data{eventdata.Indices(1), 2}, 'Band Pass') || strcmp(data{eventdata.Indices(1), 2}, 'Band Stop'))
+    if  (data{eventdata.Indices(1), eventdata.Indices(2)}>=data{eventdata.Indices(1), 5} )
         data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
     end
 end
 
-if strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') && (strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Pass') || strcmp(data{eventdata.Indices(1), eventdata.Indices(2)-3}, 'Band Stop'))
-    if   (data{eventdata.Indices(1), eventdata.Indices(2)}<=data{eventdata.Indices(1), eventdata.Indices(2)-1} )
+if strcmp(colNames{eventdata.Indices(2)}, 'High CutOff') && (strcmp(data{eventdata.Indices(1), 2}, 'Band Pass') || strcmp(data{eventdata.Indices(1), 2}, 'Band Stop'))
+    if   (data{eventdata.Indices(1), eventdata.Indices(2)}<=data{eventdata.Indices(1), 4} )
         data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
     end
 end
@@ -295,44 +281,53 @@ end
  info = get(handles.uitable1, 'UserData');
  if strcmp(data{eventdata.Indices(1), eventdata.Indices(2)}, 'Low Pass')
 
-    data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.lowpass(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.lowpass(1);
     data{eventdata.Indices(1), eventdata.Indices(2)+1} = info.lowpass(1);
-    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.lowpass(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.lowpass(2);
     data{eventdata.Indices(1), eventdata.Indices(2)+2} = info.lowpass(2);
-    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.lowpass(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+7} = info.lowpass(3);
     data{eventdata.Indices(1), eventdata.Indices(2)+3} = info.lowpass(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+8} = info.lowpass(4);
+    data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.lowpass(4);
  end
  if strcmp(data{eventdata.Indices(1), eventdata.Indices(2)}, 'High Pass')
 
     data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.highpass(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.highpass(1);
     data{eventdata.Indices(1), eventdata.Indices(2)+1} = info.highpass(1);
-    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.highpass(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.highpass(2);
     data{eventdata.Indices(1), eventdata.Indices(2)+2} = info.highpass(2);
-    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.highpass(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+7} = info.highpass(3);
     data{eventdata.Indices(1), eventdata.Indices(2)+3} = info.highpass(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+8} = info.highpass(4);
+    data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.highpass(4);
  end
  if strcmp(data{eventdata.Indices(1), eventdata.Indices(2)}, 'Band Pass')
 
     data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.bandpass(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.bandpass(1);
     data{eventdata.Indices(1), eventdata.Indices(2)+1} = info.bandpass(1);
-    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.bandpass(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.bandpass(2);
     data{eventdata.Indices(1), eventdata.Indices(2)+2} = info.bandpass(2);
-    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.bandpass(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+7} = info.bandpass(3);
     data{eventdata.Indices(1), eventdata.Indices(2)+3} = info.bandpass(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+8} = info.bandpass(4);
+    data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.bandpass(4);
  end
  if strcmp(data{eventdata.Indices(1), eventdata.Indices(2)}, 'Band Stop')
 
     data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.bandstop(1);
+    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.bandstop(1);
     data{eventdata.Indices(1), eventdata.Indices(2)+1} = info.bandstop(1);
-    data{eventdata.Indices(1), eventdata.Indices(2)+5} = info.bandstop(2);
+    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.bandstop(2);
     data{eventdata.Indices(1), eventdata.Indices(2)+2} = info.bandstop(2);
-    data{eventdata.Indices(1), eventdata.Indices(2)+6} = info.bandstop(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+7} = info.bandstop(3);
     data{eventdata.Indices(1), eventdata.Indices(2)+3} = info.bandstop(3);
+    data{eventdata.Indices(1), eventdata.Indices(2)+8} = info.bandstop(4);
+    data{eventdata.Indices(1), eventdata.Indices(2)+4} = info.bandstop(4);
  end
 
 set(hObject,'Data',data);
-
-       
 
 
 % --- Executes during object creation, after setting all properties.
@@ -340,9 +335,6 @@ function uitable1_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to uitable1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-
-
-
 
 
 
@@ -383,21 +375,25 @@ function doSetDefaultValues(handles)
             tableData{i, 3} = someOpts.lowpass(1);
             tableData{i, 4} = someOpts.lowpass(2);
             tableData{i, 5} = someOpts.lowpass(3);
+            tableData{i, 6} = someOpts.lowpass(4);
         end
         if strcmp(tableData{i, 2}, 'High Pass')
             tableData{i, 3} = someOpts.highpass(1);
             tableData{i, 4} = someOpts.highpass(2);
             tableData{i, 5} = someOpts.highpass(3);
+            tableData{i, 6} = someOpts.highpass(4);
         end
         if strcmp(tableData{i, 2}, 'Band Pass')
             tableData{i, 3} = someOpts.bandpass(1);
             tableData{i, 4} = someOpts.bandpass(2);
             tableData{i, 5} = someOpts.bandpass(3);
+            tableData{i, 6} = someOpts.bandpass(4);
         end
         if strcmp(tableData{i, 2}, 'Band Stop')
             tableData{i, 3} = someOpts.bandstop(1);
             tableData{i, 4} = someOpts.bandstop(2);
             tableData{i, 5} = someOpts.bandstop(3);
+            tableData{i, 6} = someOpts.bandstop(4);
         end
     end
     set(handles.uitable1, 'Data', tableData);
@@ -411,21 +407,26 @@ function [answer] = showPromptDefaults(handles);
 %
 prompt={'Enter the default order for the Low Pass:',...
         'Enter the default low CutOff Frequency:',...
+        'Enter the default sampling Frequency:',...
         'Enter the default order for the High Pass:',...
         'Enter the default high CutOff Frequency:',...
+        'Enter the default sampling Frequency:',...
         'Enter the default order for the Band Pass:',...
         'Enter the default low CutOff Frequency:',...
         'Enter the default high CutOff Frequency:',...
+        'Enter the default sampling Frequency:',...
         'Enter the default order for the Low Pass:',...
         'Enter the default low CutOff Frequency:',...
-        'Enter the default high CutOff Frequency:'};
+        'Enter the default high CutOff Frequency:',...
+        'Enter the default sampling Frequency:'
+        };
 name='Input the default filter parameters';
 numlines=1;
 oldDefaultsMenu = get(handles.SetDefaultsMenuItem, 'UserData');
-defaultanswer={num2str(oldDefaultsMenu.lowpass(1)), num2str(oldDefaultsMenu.lowpass(2)), ...
-    num2str(oldDefaultsMenu.highpass(1)), num2str(oldDefaultsMenu.highpass(3)), ...
-    num2str(oldDefaultsMenu.bandpass(1)), num2str(oldDefaultsMenu.bandpass(2)), num2str(oldDefaultsMenu.bandpass(3)), ...
-    num2str(oldDefaultsMenu.bandstop(1)), num2str(oldDefaultsMenu.bandstop(2)), num2str(oldDefaultsMenu.bandstop(3))};
+defaultanswer={num2str(oldDefaultsMenu.lowpass(1)), num2str(oldDefaultsMenu.lowpass(2)), num2str(oldDefaultsMenu.lowpass(4)), ...
+    num2str(oldDefaultsMenu.highpass(1)), num2str(oldDefaultsMenu.highpass(3)), num2str(oldDefaultsMenu.highpass(4)), ...
+    num2str(oldDefaultsMenu.bandpass(1)), num2str(oldDefaultsMenu.bandpass(2)), num2str(oldDefaultsMenu.bandpass(3)), num2str(oldDefaultsMenu.bandpass(4)),...
+    num2str(oldDefaultsMenu.bandstop(1)), num2str(oldDefaultsMenu.bandstop(2)), num2str(oldDefaultsMenu.bandstop(3)), num2str(oldDefaultsMenu.bandstop(4))};
 answer = inputdlg(prompt,name,numlines,defaultanswer);
 
 
@@ -456,45 +457,62 @@ if newVals_y>0
     
     optsTableData = get(handles.uitable1, 'Data');
     [numRow, numCol] = size(optsTableData);
+ 
     oldDefaultsMenu.lowpass(1) = str2num(char(newVals(1)));
     oldDefaultsTable.lowpass(1) = str2num(char(newVals(1)));
-  
     oldDefaultsMenu.lowpass(2) = str2num(char(newVals(2)));
     oldDefaultsTable.lowpass(2) = str2num(char(newVals(2)));
-    oldDefaultsMenu.highpass(1) = str2num(char(newVals(3)));
-    oldDefaultsTable.highpass(1) = str2num(char(newVals(3)));
-    oldDefaultsMenu.highpass(3) = str2num(char(newVals(4)));
-    oldDefaultsTable.highpass(3) = str2num(char(newVals(4)));
-    oldDefaultsMenu.bandpass(1) = str2num(char(newVals(5)));
-    oldDefaultsTable.bandpass(1) = str2num(char(newVals(5)));
-    oldDefaultsMenu.bandpass(2) = str2num(char(newVals(6)));
-    oldDefaultsTable.bandpass(2) = str2num(char(newVals(6)));
-    oldDefaultsMenu.bandpass(3) = str2num(char(newVals(7)));
-    oldDefaultsTable.bandpass(3) = str2num(char(newVals(7)));
-    oldDefaultsMenu.bandstop(1) = str2num(char(newVals(8)));
-    oldDefaultsTable.bandstop(1) = str2num(char(newVals(8)));
-    oldDefaultsMenu.bandstop(2) = str2num(char(newVals(9)));
-    oldDefaultsTable.bandstop(2) = str2num(char(newVals(9)));
-    oldDefaultsMenu.bandstop(3) = str2num(char(newVals(10)));
-    oldDefaultsTable.bandstop(3) = str2num(char(newVals(10)));
+    oldDefaultsMenu.lowpass(4) = str2num(char(newVals(3)));
+    oldDefaultsTable.lowpass(4) = str2num(char(newVals(3)));
+    
+    oldDefaultsMenu.highpass(1) = str2num(char(newVals(4)));
+    oldDefaultsTable.highpass(1) = str2num(char(newVals(4)));
+    oldDefaultsMenu.highpass(3) = str2num(char(newVals(5)));
+    oldDefaultsTable.highpass(3) = str2num(char(newVals(5)));
+    oldDefaultsMenu.highpass(4) = str2num(char(newVals(6)));
+    oldDefaultsTable.highpass(4) = str2num(char(newVals(6)));
+    
+    
+    oldDefaultsMenu.bandpass(1) = str2num(char(newVals(7)));
+    oldDefaultsTable.bandpass(1) = str2num(char(newVals(7)));
+    oldDefaultsMenu.bandpass(2) = str2num(char(newVals(8)));
+    oldDefaultsTable.bandpass(2) = str2num(char(newVals(8)));
+    oldDefaultsMenu.bandpass(3) = str2num(char(newVals(9)));
+    oldDefaultsTable.bandpass(3) = str2num(char(newVals(9)));
+    oldDefaultsMenu.bandpass(4) = str2num(char(newVals(10)));
+    oldDefaultsTable.bandpass(4) = str2num(char(newVals(10)));
+    
+    oldDefaultsMenu.bandstop(1) = str2num(char(newVals(11)));
+    oldDefaultsTable.bandstop(1) = str2num(char(newVals(11)));
+    oldDefaultsMenu.bandstop(2) = str2num(char(newVals(12)));
+    oldDefaultsTable.bandstop(2) = str2num(char(newVals(12)));
+    oldDefaultsMenu.bandstop(3) = str2num(char(newVals(13)));
+    oldDefaultsTable.bandstop(3) = str2num(char(newVals(13)));
+    oldDefaultsMenu.bandstop(4) = str2num(char(newVals(14)));
+    oldDefaultsTable.bandstop(4) = str2num(char(newVals(14)));
+    
     for i = 1:numRow
         if strcmp(optsTableData{i, 2}, 'Low Pass')
-            optsTableData{i, 6} = oldDefaultsMenu.lowpass(1);
-            optsTableData{i, 7} = oldDefaultsMenu.lowpass(2);
+            optsTableData{i, 7} = oldDefaultsMenu.lowpass(1);
+            optsTableData{i, 8} = oldDefaultsMenu.lowpass(2);
+            optsTableData{i, 10} = oldDefaultsMenu.lowpass(4);
         end
          if strcmp(optsTableData{i, 2}, 'High Pass')
-            optsTableData{i, 6} = oldDefaultsMenu.highpass(1);
-            optsTableData{i, 8} = oldDefaultsMenu.highpass(2);
+            optsTableData{i, 7} = oldDefaultsMenu.highpass(1);
+            optsTableData{i, 9} = oldDefaultsMenu.highpass(3);
+            optsTableData{i, 10} = oldDefaultsMenu.highpass(4);
          end
          if strcmp(optsTableData{i, 2}, 'Band Pass')
-            optsTableData{i, 6} = oldDefaultsMenu.bandpass(1);
-            optsTableData{i, 7} = oldDefaultsMenu.bandpass(2);
-            optsTableData{i, 8} = oldDefaultsMenu.bandpass(3);
+            optsTableData{i, 7} = oldDefaultsMenu.bandpass(1);
+            optsTableData{i, 8} = oldDefaultsMenu.bandpass(2);
+            optsTableData{i, 9} = oldDefaultsMenu.bandpass(3);
+            optsTableData{i, 10} = oldDefaultsMenu.bandpass(4);
          end
         if strcmp(optsTableData{i, 2}, 'Band Stop')
-            optsTableData{i, 6} = oldDefaultsMenu.bandstop(1);
-            optsTableData{i, 7} = oldDefaultsMenu.bandstop(2);
-            optsTableData{i, 8} = oldDefaultsMenu.bandstop(3);
+            optsTableData{i, 7} = oldDefaultsMenu.bandstop(1);
+            optsTableData{i, 8} = oldDefaultsMenu.bandstop(2);
+            optsTableData{i, 9} = oldDefaultsMenu.bandstop(3);
+            optsTableData{i, 10} = oldDefaultsMenu.bandstop(4);
         end
         
     end
@@ -525,6 +543,29 @@ if str2num(char(someAnswer(1)))<= 0
     result = 1;return
 end
 
+if length(str2num(char(someAnswer(4))))== 0 
+    result = 1;return
+end
+if str2num(char(someAnswer(4)))<= 0 
+    result = 1;return
+end
+
+if length(str2num(char(someAnswer(7))))== 0 
+    result = 1;return
+end
+if str2num(char(someAnswer(7)))<= 0 
+    result = 1;return
+end
+
+if length(str2num(char(someAnswer(11))))== 0 
+    result = 1;return
+end
+if str2num(char(someAnswer(11)))<= 0 
+    result = 1;return
+end
+
+%sampling frequency check
+
 if length(str2num(char(someAnswer(3))))== 0 
     result = 1;return
 end
@@ -532,19 +573,28 @@ if str2num(char(someAnswer(3)))<= 0
     result = 1;return
 end
 
-if length(str2num(char(someAnswer(5))))== 0 
+if length(str2num(char(someAnswer(6))))== 0 
     result = 1;return
 end
-if str2num(char(someAnswer(5)))<= 0 
+if str2num(char(someAnswer(6)))<= 0 
     result = 1;return
 end
 
-if length(str2num(char(someAnswer(8))))== 0 
+if length(str2num(char(someAnswer(10))))== 0 
     result = 1;return
 end
-if str2num(char(someAnswer(8)))<= 0 
+if str2num(char(someAnswer(10)))<= 0 
     result = 1;return
 end
+
+if length(str2num(char(someAnswer(14))))== 0 
+    result = 1;return
+end
+if str2num(char(someAnswer(14)))<= 0 
+    result = 1;return
+end
+
+
 
 
 % lowpass/highpass lo/hi freq
@@ -552,43 +602,43 @@ if length(str2num(char(someAnswer(2))))== 0
     result = 1;
     return
 end
-if ((str2num(char(someAnswer(2)))<= 0) || (str2num(char(someAnswer(2)))>=1))
+if ((str2num(char(someAnswer(2)))<= 0) || (2.0*str2num(char(someAnswer(2)))/str2num(char(someAnswer(3)))>=1))
     result = 1;return
 end
-if length(str2num(char(someAnswer(4))))== 0 
+if length(str2num(char(someAnswer(5))))== 0 
     result = 1;return
 end
-if (str2num(char(someAnswer(4)))<= 0) || (str2num(char(someAnswer(4)))>=1) 
+if (str2num(char(someAnswer(5)))<= 0) || (2.0*str2num(char(someAnswer(5)))/str2num(char(someAnswer(6)))>=1) 
     result = 1;return
 end
 
 % bandstop lo/hi freq
-if length(str2num(char(someAnswer(9))))== 0 
+if length(str2num(char(someAnswer(12))))== 0 
     result = 1;return
 end
-if (str2num(char(someAnswer(9)))<= 0) || (str2num(char(someAnswer(9)))>=1)
+if (str2num(char(someAnswer(12)))<= 0) || (2.0*str2num(char(someAnswer(12)))/str2num(char(someAnswer(14)))>=1)
     result = 1;return
 end
-if length(str2num(char(someAnswer(10))))== 0 
+if length(str2num(char(someAnswer(13))))== 0 
     result = 1;return
 end
-if (str2num(char(someAnswer(10)))<= 0) || (str2num(char(someAnswer(10)))>=1) || (str2num(char(someAnswer(10)))<= str2num(char(someAnswer(9))))
+if (str2num(char(someAnswer(13)))<= 0) || (2.0*str2num(char(someAnswer(13)))/str2num(char(someAnswer(14)))>=1) || (str2num(char(someAnswer(13)))<= str2num(char(someAnswer(12))))
     result = 1;return
 end
 
 
 
 % bandpass lo/hi freq
-if length(str2num(char(someAnswer(6))))== 0 
+if length(str2num(char(someAnswer(8))))== 0 
     result = 1;return
 end
-if (str2num(char(someAnswer(6)))<= 0) || (str2num(char(someAnswer(6)))>=1)
+if (str2num(char(someAnswer(8)))<= 0) || (2.0*str2num(char(someAnswer(8)))/str2num(char(someAnswer(10)))>=1)
     result = 1;return
 end
-if length(str2num(char(someAnswer(7))))== 0 
+if length(str2num(char(someAnswer(9))))== 0 
     result = 1;return
 end
-if (str2num(char(someAnswer(7)))<= 0) || (str2num(char(someAnswer(7)))>=1) || (str2num(char(someAnswer(7)))<= str2num(char(someAnswer(6))))
+if (str2num(char(someAnswer(9)))<= 0) || (2.0*str2num(char(someAnswer(9)))/str2num(char(someAnswer(10)))>=1) || (str2num(char(someAnswer(9)))<= str2num(char(someAnswer(8))))
     result = 1;return
 end
 
@@ -611,15 +661,16 @@ function uiopentool_ClickedCallback(hObject, eventdata, handles)
 [file, path] = uigetfile('*.mat');
 if ~isequal(file, 0)
     open(fullfile(path, file));
-newData = importdata(fullfile(path, file));
-newData = newData';
-    % select only the first 10 values
-    [nrCol, sizeCol] = size(newData);
-    %newData
+    
+    %store the output file name
     set(handles.FileMenu, 'Userdata', strrep(fullfile(path, file), '.mat', '_out.mat'))
-%strrep(file, '.mat', '_out.mat');
-setGridProperties(nrCol, sizeCol, newData, handles)
+    
+    newData = importdata(fullfile(path, file));
+    newData = newData';
+    [nrCol, sizeCol] = size(newData);
 
+    %construct dynamically the grid widget
+    setGridProperties(nrCol, sizeCol, newData, handles)
 
 end
 
@@ -631,7 +682,7 @@ function figure1_ResizeFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-%TO DO
+% TODO
 % Get the figure size and position
 % Figure_Size = get(hObject, 'Position');
  %set(handles.Contact_Name,'units','characters');
@@ -669,7 +720,7 @@ for i=1:nrSeries
         if strcmp(processData{i, 2}, 'Low Pass')
             
 
-            h = fdesign.lowpass('N,Fc', processData{i, 3}, processData{i, 4});
+            h = fdesign.lowpass('N,Fc', processData{i, 3}, 2.0*processData{i, 4}/processData{i, 6});
 
             Hd = design(h, 'window');
             out = filter(Hd, [outputData{i, :}]);
@@ -683,7 +734,7 @@ for i=1:nrSeries
         if strcmp(processData{i, 2}, 'High Pass')
             
 
-            h = fdesign.highpass('N,Fc', processData{i, 3}, processData{i, 5});
+            h = fdesign.highpass('N,Fc', processData{i, 3}, 2.0*processData{i, 5}/processData{i, 6});
 
             Hd = design(h, 'window');
             out = filter(Hd, [outputData{i, :}]);
@@ -695,7 +746,7 @@ for i=1:nrSeries
         if strcmp(processData{i, 2}, 'Band Pass')
             
 
-            h = fdesign.bandpass('N,Fc1,Fc2', processData{i, 3}, processData{i, 4},  processData{i, 5});
+            h = fdesign.bandpass('N,Fc1,Fc2', processData{i, 3}, 2.0*processData{i, 4}/processData{i, 6},  2.0*processData{i, 5}/processData{i, 6});
 
             Hd = design(h, 'window');
             out = filter(Hd, [outputData{i, :}]);
@@ -707,7 +758,7 @@ for i=1:nrSeries
         if strcmp(processData{i, 2}, 'Band Stop')
             
 
-            h = fdesign.bandstop('N,Fc1,Fc2', processData{i, 3}, processData{i, 4},  processData{i, 5});
+            h = fdesign.bandstop('N,Fc1,Fc2', processData{i, 3}, 2.0*processData{i, 4}/processData{i, 6},  2.0*processData{i, 5}/processData{i, 6});
 
             Hd = design(h, 'window');
             out = filter(Hd, [outputData{i, :}]);
