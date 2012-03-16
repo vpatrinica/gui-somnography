@@ -62,7 +62,7 @@ guidata(hObject, handles);
 defaultOptsFilters.lowpass = [25 16 0 80];
 defaultOptsFilters.highpass = [25 0 28 80];
 defaultOptsFilters.bandpass = [25 16 28 80];
-defaultOptsFilters.bandstop = [25 16 28 80];
+defaultOptsFilters.bandstop = [24 16 28 80];
 
 set(handles.SetDefaultsMenuItem,'UserData', defaultOptsFilters);
 
@@ -230,6 +230,12 @@ if strcmp(colNames{eventdata.Indices(2)}, 'Order')
     end
 end
 
+
+if strcmp(colNames{eventdata.Indices(2)}, 'Order') && strcmp(data{eventdata.Indices(1), 2}, 'Band Stop')
+    if (mod(data{eventdata.Indices(1), eventdata.Indices(2)}, 2) > 0)
+        data{eventdata.Indices(1), eventdata.Indices(2)} = eventdata.PreviousData;
+    end
+end
 
 if strcmp(colNames{eventdata.Indices(2)}, 'Sampling')
     if (data{eventdata.Indices(1), eventdata.Indices(2)} <= 0) || isnan(data{eventdata.Indices(1), eventdata.Indices(2)})
@@ -415,7 +421,7 @@ prompt={'Enter the default order for the Low Pass:',...
         'Enter the default low CutOff Frequency:',...
         'Enter the default high CutOff Frequency:',...
         'Enter the default sampling Frequency:',...
-        'Enter the default order for the Low Pass:',...
+        'Enter the default order for the Band Stop:',...
         'Enter the default low CutOff Frequency:',...
         'Enter the default high CutOff Frequency:',...
         'Enter the default sampling Frequency:'
@@ -561,6 +567,11 @@ if length(str2num(char(someAnswer(11))))== 0
     result = 1;return
 end
 if str2num(char(someAnswer(11)))<= 0 
+    result = 1;return
+end
+
+
+if mod(str2num(char(someAnswer(11))), 2) > 0 
     result = 1;return
 end
 
@@ -758,9 +769,10 @@ for i=1:nrSeries
         if strcmp(processData{i, 2}, 'Band Stop')
             
 
-            h = fdesign.bandstop('N,Fc1,Fc2', processData{i, 3}, 2.0*processData{i, 4}/processData{i, 6},  2.0*processData{i, 5}/processData{i, 6});
+            %h = fdesign.bandstop('N,Fc1,Fc2', processData{i, 3}, 2.0*processData{i, 4}/processData{i, 6},  2.0*processData{i, 5}/processData{i, 6});
+            h = fdesign.bandstop('N,F3dB1,F3dB2', processData{i, 3},processData{i, 4},  processData{i, 5}, processData{i, 6});
 
-            Hd = design(h, 'window');
+            Hd = design(h, 'butter');
             out = filter(Hd, [outputData{i, :}]);
             for j=1:nrColumns
                 outputData{i, j} = out(1,j);

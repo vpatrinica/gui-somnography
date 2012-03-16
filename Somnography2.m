@@ -106,8 +106,17 @@ function plotData(handles, data, nCol)
 %
 subplot(1,1,1,'Parent',handles.uipanel1)
 for i = 1:nCol
+    %[L, dummy] = size(data);
+    %Fs = 500;
+    
+    %NFFT = 2^nextpow2(L);
+    %f = Fs/2*linspace(0,1,NFFT/2+1);
     aPlot = subplot(nCol,1,i); 
     plot(abs(fft([data{:, i}])));
+    %v = (2*abs(fft([data{:, i}])/L));
+    %plot(f, v(1:NFFT/2+1))
+    %plot(f, 2*abs(fft([data{:, i}])/L)[]);
+    
     ylabel(strcat('Data_', int2str(i)));
 end
 
